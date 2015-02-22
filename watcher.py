@@ -299,17 +299,17 @@ def watcher(config):
     # read jobs from config file
     for section in config.sections():
         # get the basic config info
-        mask      = parseMask(config.get(section,'events').split(','))
-        folder    = config.get(section,'watch')
-        recursive = config.getboolean(section,'recursive')
-        autoadd   = config.getboolean(section,'autoadd')
-        excluded  = None if '' in config.get(section,'excluded').split(',') else set(config.get(section,'excluded').split(','))
-        include_extensions = None if '' in config.get(section,'include_extensions').split(',') else set(config.get(section,'include_extensions').split(','))
-        exclude_extensions = None if '' in config.get(section,'exclude_extensions').split(',') else set(config.get(section,'exclude_extensions').split(','))
-        exclude_re = None if not config.get(section,'exclude_re') else config.get(section,'exclude_re')
-        command   = config.get(section,'command')
-        background= config.getboolean(section,'background')
-        log_output = config.getboolean(section,'log_output')
+        mask      = parseMask(config.get(section, 'events').split(','))
+        folder    = config.get(section, 'watch')
+        recursive = config.getboolean(section, 'recursive')
+        autoadd   = config.getboolean(section, 'autoadd')
+        excluded  = None if '' in config.get(section, 'excluded').split(',') else set(config.get(section, 'excluded').split(','))
+        include_extensions = None if '' in config.get(section, 'include_extensions').split(',') else set(config.get(section, 'include_extensions').split(','))
+        exclude_extensions = None if '' in config.get(section, 'exclude_extensions').split(',') else set(config.get(section, 'exclude_extensions').split(','))
+        exclude_re = None if not config.get(section, 'exclude_re') else config.get(section, 'exclude_re')
+        command   = config.get(section, 'command')
+        background = config.getboolean(section, 'background')
+        log_output = config.getboolean(section, 'log_output')
 
         outfile = config.get(section, 'outfile')
         t = string.Template(outfile)
@@ -463,12 +463,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
                 description='A daemon to monitor changes within specified directories and run commands on these changes.',
              )
-    parser.add_argument('-c','--config',
+    parser.add_argument('-c', '--config',
                         action='store',
                         help='Path to the config file (default: %(default)s)')
     parser.add_argument('command',
                         action='store',
-                        choices=['start','stop','restart','debug'],
+                        choices=['start', 'stop', 'restart', 'debug'],
                         help='What to do.')
     parser.add_argument('-v', '--verbose', action='store_true', help='verbose output')
 
@@ -494,7 +494,7 @@ if __name__ == "__main__":
         loghandler = logging.StreamHandler()
         logger.setLevel(logging.DEBUG)
     else: 
-        loghandler = logging.FileHandler(config.get('DEFAULT','logfile'))
+        loghandler = logging.FileHandler(config.get('DEFAULT', 'logfile'))
     if args.verbose:
         logger.setLevel(logging.DEBUG)
     loghandler.setFormatter(logformatter)
