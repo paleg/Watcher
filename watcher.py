@@ -63,7 +63,6 @@ class DaemonRunner(object):
         if signal_map is not None:
             self.daemon_context.signal_map = signal_map
         self.daemon_context.files_preserve = files_preserve
-        signal.signal(signal.SIGCLD, signal.SIG_IGN)
 
     def restart(self):
         """ Stop, then start.
@@ -169,7 +168,7 @@ def is_pidfile_stale(pidfile):
     return result
 
 class EventHandler(pyinotify.ProcessEvent):
-    def __init__(self, job, command, include_extensions, exclude_extensions, exclude_re, background, outfile):
+    def __init__(self, job, command, log_output, include_extensions, exclude_extensions, exclude_re, background, outfile):
         pyinotify.ProcessEvent.__init__(self)
         self.job = job
         self.command = command
@@ -178,7 +177,14 @@ class EventHandler(pyinotify.ProcessEvent):
         self.exclude_re_txt = exclude_re
         self.exclude_re = None if not exclude_re else re.compile(exclude_re)
         self.background = background
-        self.outfile = outfile
+        self.log_output = log_output
+        if self.log_output:
+            if outfile:
+                self.outfile = outfile
+            else:
+                self.outfile = subprocess.PIPE
+        else:
+            self.outfile = None
         
     # from http://stackoverflow.com/questions/35817/how-to-escape-os-system-calls-in-python
     def shellquote(self,s):
@@ -207,16 +213,23 @@ class EventHandler(pyinotify.ProcessEvent):
                                nflags=self.shellquote(event.mask),
                                cookie=self.shellquote(event.cookie if hasattr(event, "cookie") else 0))
         try:
+            args = shlex.split(command)
             if not self.background:
                 # sync exec
-                os.system(command)
-                #print "Run command print: %s" % (command)
-                logger.info("Run command log: %s" % (command))
+                logger.info("Running command: '{0}'".format(command))
+                process = subprocess.Popen(args, stdout=self.outfile, stderr=subprocess.STDOUT)
+                output, code = process.communicate()
+                if process.returncode == 0:
+                    logger.info("Command finished successfully")
+                else:
+                    logger.info("Command failed, return code was {0}".format(process.returncode))
+                if self.log_output and output:
+                    logger.info("Output was: '{0}'".format(output))
             else:
-                logger.info("Executing child: \"%s\""%command)
-                args = shlex.split(command)
                 # async exec
-                subprocess.Popen(args, stdout=self.outfile, stderr=self.outfile)
+                process = subprocess.Popen(args, stdout=self.outfile, stderr=subprocess.STDOUT)
+                logger.info("Executed child ({0}): '{1}'".format(process.pid, command))
+                processes.append( process )
         except OSError, err:
             #print "Failed to run command '%s' %s" % (command, str(err))
             logger.info("Failed to run command '%s' %s" % (command, str(err)))
@@ -296,17 +309,17 @@ def watcher(config):
         exclude_re = None if not config.get(section,'exclude_re') else config.get(section,'exclude_re')
         command   = config.get(section,'command')
         background= config.getboolean(section,'background')
+        log_output = config.getboolean(section,'log_output')
 
         outfile = config.get(section, 'outfile')
         t = string.Template(outfile)
         outfile = t.substitute(job=section)
         outfile_h = open(outfile, 'a+b', buffering=0) if outfile else None
-        logger.debug("outfile = '%s'"%outfile)
 
         logger.info(section + ": " + folder)
 
         wm = pyinotify.WatchManager()
-        handler = EventHandler(section, command, include_extensions, exclude_extensions, exclude_re, background, outfile_h)
+        handler = EventHandler(section, command, log_output, include_extensions, exclude_extensions, exclude_re, background, outfile_h)
 
         wdds[section] = wm.add_watch(folder, mask, rec=recursive,auto_add=autoadd)
         # Remove watch about excluded dir. 
@@ -331,6 +344,18 @@ def watcher(config):
     # Wait for SIGTERM
     try:
         while 1:
+            for process in list(processes):
+                if process.poll():
+                    if process.returncode == 0:
+                        logger.info("Child {0} finished successfully".format(process.pid))
+                    else:
+                        logger.error("Child {0} failed, return code was {1}".format(process.pid, process.returncode))
+                    if process.stdout:
+                        output = process.stdout.read()
+                        if output:
+                            logger.info("Output was: '{0}'".format(output))
+
+                    processes.remove( process )
             time.sleep(0.1)
     except:
         cleanup_notifiers(notifiers)
@@ -480,6 +505,8 @@ if __name__ == "__main__":
     options['files_preserve'] = [loghandler.stream]
     options['func_arg'] = config
     daemon = DaemonRunner(watcher, **options)
+    # for background processes polling
+    processes = []
     
     # Execute the command
     if 'start' == args.command:
