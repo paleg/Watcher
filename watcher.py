@@ -179,10 +179,7 @@ class EventHandler(pyinotify.ProcessEvent):
         self.background = background
         self.log_output = log_output
         if self.log_output:
-            if outfile:
-                self.outfile = outfile
-            else:
-                self.outfile = subprocess.PIPE
+            self.outfile = outfile if outfile else subprocess.PIPE
         else:
             self.outfile = None
         
@@ -306,15 +303,37 @@ def watcher(config):
         excluded  = None if '' in config.get(section, 'excluded').split(',') else set(config.get(section, 'excluded').split(','))
         include_extensions = None if '' in config.get(section, 'include_extensions').split(',') else set(config.get(section, 'include_extensions').split(','))
         exclude_extensions = None if '' in config.get(section, 'exclude_extensions').split(',') else set(config.get(section, 'exclude_extensions').split(','))
-        exclude_re = None if not config.get(section, 'exclude_re') else config.get(section, 'exclude_re')
         command   = config.get(section, 'command')
-        background = config.getboolean(section, 'background')
-        log_output = config.getboolean(section, 'log_output')
 
-        outfile = config.get(section, 'outfile')
-        t = string.Template(outfile)
-        outfile = t.substitute(job=section)
-        outfile_h = open(outfile, 'a+b', buffering=0) if outfile else None
+        try:
+            exclude_re = None if not config.get(section, 'exclude_re') else config.get(section, 'exclude_re')
+        except ConfigParser.NoOptionError:
+            exclude_re = None
+
+        try:
+            background = config.getboolean(section, 'background')
+        except (ConfigParser.NoOptionError, ValueError):
+            background = False
+
+        try:
+            log_output = config.getboolean(section, 'log_output')
+        except (ConfigParser.NoOptionError, ValueError):
+            log_output = True
+
+        outfile = ''
+        outfile_h = None
+        if log_output:
+            try:
+                outfile = config.get(section, 'outfile')
+            except ConfigParser.NoOptionError:
+                pass
+            if outfile:
+                t = string.Template(outfile)
+                outfile = t.substitute(job=section)
+                logger.debug("logging '{0}' output to '{1}'".format(section, outfile))
+                outfile_h = open(outfile, 'a+b', buffering=0)
+            else:
+                logger.debug("logging '{0}' output to daemon log".format(section))
 
         logger.info(section + ": " + folder)
 
