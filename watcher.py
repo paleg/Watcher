@@ -12,8 +12,11 @@ import datetime, signal, errno
 import pyinotify
 import argparse, ConfigParser, string
 import logging, time
-import daemon, lockfile
-from lockfile import pidlockfile
+import daemon
+try:
+    from daemon import pidlockfile
+except ImportError:
+    from daemon import pidfile as pidlockfile
 import re
 import subprocess
 import shlex
