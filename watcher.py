@@ -70,7 +70,7 @@ class DaemonRunner(object):
                             uid=uid, gid=gid)
         self.daemon_context.stdin  = open(stdin or '/dev/null', 'r')
         self.daemon_context.stdout = open(stdout or '/dev/null', 'w+')
-        self.daemon_context.stderr = open(stderr or '/dev/null', 'w+', buffering=0)
+        self.daemon_context.stderr = open(stderr or '/dev/null', 'w+b', buffering=0)
 
         self.pidfile = None
         if pidfile is not None:
