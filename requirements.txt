@@ -1,4 +1,4 @@
 configparser
 pyinotify
-lockfile
+lockfile>=0.9
 python-daemon-3K

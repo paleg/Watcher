@@ -111,7 +111,7 @@ class DaemonRunner(object):
             
         try:
             self.daemon_context.open()
-        except lockfile.pidlockfile.AlreadyLocked:
+        except lockfile.AlreadyLocked:
             pidfile_path = self.pidfile.path
             logger.info("PID file %(pidfile_path)r already locked" % vars())
             return
@@ -158,14 +158,12 @@ class DaemonRunner(object):
             "Failed to terminate %(pid)d" % vars())
         
 def make_pidlockfile(path):
-    """ Make a PIDLockFile instance with the given filesystem path. """
+    """ Make a LockFile instance with the given filesystem path. """
     if not isinstance(path, basestring):
-        error = ValueError("Not a filesystem path: %(path)r" % vars())
-        raise error
+        raise ValueError("Not a filesystem path: %(path)r" % vars())
     if not os.path.isabs(path):
-        error = ValueError("Not an absolute path: %(path)r" % vars())
-        raise error
-    return lockfile.pidlockfile.PIDLockFile(path)
+        raise ValueError("Not an absolute path: %(path)r" % vars())
+    return lockfile.LockFile(path)
 
 def is_pidfile_stale(pidfile):
     """ Determine whether a PID file is stale.
