@@ -26,7 +26,11 @@ try:
     basestring
 except NameError:  # python 3 compatibility
     basestring = str
-  
+
+logger = logging.getLogger("daemonlog")
+logger.setLevel(logging.INFO)
+logformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
 # Video extensions
 VIDEO_EXTENSIONS = ('.3g2', '.3gp', '.3gp2', '.3gpp', '.60d', '.ajp', '.asf', '.asx', '.avchd', '.avi', '.bik',
                     '.bix', '.box', '.cam', '.dat', '.divx', '.dmf', '.dv', '.dvr-ms', '.evo', '.flc', '.fli',
@@ -484,9 +488,6 @@ if __name__ == "__main__":
         sys.exit(4);
 
     # Initialize logging
-    logger = logging.getLogger("daemonlog")
-    logger.setLevel(logging.INFO)
-    logformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     if args.command == 'debug':
         loghandler = logging.StreamHandler()
         logger.setLevel(logging.DEBUG)
