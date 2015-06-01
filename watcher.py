@@ -72,8 +72,8 @@ class DaemonRunner(object):
         self.daemon_context = daemon.DaemonContext(umask=umask or 0,
                             working_directory=working_directory or '/',
                             uid=uid, gid=gid)
-        self.daemon_context.stdin  = open(stdin or '/dev/null', 'r')
-        self.daemon_context.stdout = open(stdout or '/dev/null', 'w+')
+        self.daemon_context.stdin  = open(stdin or '/dev/null', 'rb')
+        self.daemon_context.stdout = open(stdout or '/dev/null', 'w+b')
         self.daemon_context.stderr = open(stderr or '/dev/null', 'w+b', buffering=0)
 
         self.pidfile = None
