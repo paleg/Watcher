@@ -1,25 +1,52 @@
-#!/sbin/runscript
-# Copyright 1999-2013 Gentoo Foundation
-# Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/net-analyzer/zabbix/files/2.2/init.d/zabbix-agentd,v 1.1 2013/11/16 07:18:54 mattm Exp $
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          watcher
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start/stop Watcher that watches specified files/folders for changes
+### END INIT INFO
 
-pid_file="/run/watcher.pid"
-config_file="/etc/watcher.ini"
-daemon_bin="/usr/local/bin/watcher.py"
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+DESC="Watches specified files/folders for changes"
+NAME="watcher"
+DAEMON="/usr/bin/watcher.py"
+DAEMON_CONFIG="/etc/watcher.ini"
 
-start_pre() {
-	checkpath -d -m 0775 -o root:wheel /var/log/watcher
-}
+
+# Exit if the package is not installed
+[ -x "$DAEMON" ] || exit 0
 
 start() {
-	ebegin "Starting inotify watcher"
-	start-stop-daemon --start --pidfile ${pid_file} \
-	    --exec $daemon_bin -- -c $config_file -v start
-	eend $?
+    $DAEMON start -c $DAEMON_ARGS
 }
 
 stop() {
-	ebegin "Stopping inotify watcher"
-	start-stop-daemon  --stop --pidfile ${pid_file}
-	eend $?
+    $DAEMON stop -c $DAEMON_ARGS
 }
+
+restart() {
+    $DAEMON restart -c $DAEMON_ARGS
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+
+    stop)
+        stop
+        ;;
+        
+    restart|force-reload)
+        restart
+        ;;
+        
+    status)
+        ;;
+    *)
+        echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload}" >&2
+        exit 3
+        ;;
+esac
