@@ -19,15 +19,15 @@ DAEMON_CONFIG="/etc/watcher.ini"
 [ -x "$DAEMON" ] || exit 0
 
 start() {
-    $DAEMON start -c $DAEMON_ARGS
+    $DAEMON start -c $DAEMON_CONFIG
 }
 
 stop() {
-    $DAEMON stop -c $DAEMON_ARGS
+    $DAEMON stop -c $DAEMON_CONFIG
 }
 
 restart() {
-    $DAEMON restart -c $DAEMON_ARGS
+    $DAEMON restart -c $DAEMON_CONFIG
 }
 
 case "$1" in
