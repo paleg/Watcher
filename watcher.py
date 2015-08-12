@@ -406,7 +406,7 @@ def parseMask(masks):
         elif 'write_close' == mask:
             ret = addMask(pyinotify.IN_CLOSE_WRITE, ret)
         elif 'nowrite_close' == mask:
-            ret = ddMask(pyinotify.IN_CLOSE_NOWRITE, ret)
+            ret = addMask(pyinotify.IN_CLOSE_NOWRITE, ret)
         elif 'create' == mask:
             ret = addMask(pyinotify.IN_CREATE, ret)
         elif 'delete' == mask:
