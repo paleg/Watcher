@@ -12,11 +12,19 @@ This fork is a rewritting of the code using python-daemon implementation of [PEP
 
 ## Requirements
 
-You need Python 2.7 and the following modules that can be installed with `pip`:
+You need Python 2.7 and the following modules that can be installed with your package manager or `pip`:
 
 * [pyinotify](http://github.com/seb-m/pyinotify)
 * [python-daemon](https://alioth.debian.org/projects/python-daemon/)
 * [lockfile](https://launchpad.net/pylockfile)
+
+To install modules on Debian:
+
+    sudo apt-get install python-pyinotify python-daemon python-lockfile
+    
+To install modules on Gentoo:
+
+    emerge -av dev-python/pyinotify dev-python/python-daemon dev-python/lockfile
 
 To install `pip` on Ubuntu:
 
@@ -63,3 +71,25 @@ If you don't want the daemon to fork to the background, start it with
 
     ./watcher.py debug
 
+## Autostart Watcher on system startup
+
+There is some init startup scripts in repo (gentoo, debian and systemd unit). Use your init system manual to install them properly.
+
+For debian:
+
+    cp init.watcher.debian /etc/init.d/watcher
+    update-rc.d watcher defaults
+    /etc/init.d/watcher start
+    
+For gentoo:
+
+    cp init.watcher.gentoo /etc/init.d/watcher
+    rc-update add watcher default
+    /etc/init.d/watcher start
+    
+For systemd:
+
+    cp init.watcher.unit /etc/systemd/system/watcher.service
+    systemctl daemon-reload
+    systemctl enable watcher
+    systemctl start watcher
