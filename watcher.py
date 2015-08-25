@@ -8,8 +8,8 @@ from __future__ import print_function, division, unicode_literals, absolute_impo
 ##  Modified from daemon.runner and from watcher (https://github.com/splitbrain/Watcher, original work https://github.com/gregghz/Watcher)
 ##
 
-import sys, os, grp
-import datetime, signal, errno
+import sys, os
+import signal, errno
 import pyinotify
 import argparse, string
 import logging, time
