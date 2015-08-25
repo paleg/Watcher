@@ -106,17 +106,17 @@ class DaemonRunner(object):
         elif status == False:
             ## Allow only one instance of the daemon
             pid = self.pidfile.read_pid()
-            logger.info("Daemon already running with PID %(pid)r" % vars())
+            logger.info("Daemon already running with PID %(pid)r", vars())
             return
 
         try:
             self.daemon_context.open()
         except lockfile.AlreadyLocked:
             pidfile_path = self.pidfile.path
-            logger.info("PID file %(pidfile_path)r already locked" % vars())
+            logger.info("PID file %(pidfile_path)r already locked", vars())
             return
         pid = os.getpid()
-        logger.info('Daemon started with pid %(pid)d' % vars())
+        logger.info('Daemon started with pid %(pid)d', vars())
 
         self.run()
 
@@ -125,7 +125,7 @@ class DaemonRunner(object):
             """
         if not self.pidfile.is_locked():
             pidfile_path = self.pidfile.path
-            logger.info("PID file %(pidfile_path)r not locked" % vars())
+            logger.info("PID file %(pidfile_path)r not locked", vars())
             return
 
         if is_pidfile_stale(self.pidfile):
@@ -151,7 +151,7 @@ class DaemonRunner(object):
         except OSError as exc:
             if exc.errno == errno.ESRCH:
                 # The specified PID does not exist
-                logger.info("Pid %(pid)d terminated." % vars())
+                logger.info("Pid %(pid)d terminated.", vars())
                 return
 
         raise DaemonRunnerStopFailureError(
@@ -213,14 +213,14 @@ class EventHandler(pyinotify.ProcessEvent):
         # if specified, exclude extensions, or include extensions.
         if self.include_extensions and all(not event.pathname.endswith(ext) for ext in self.include_extensions):
             #print "File %s excluded because its exension is not in the included extensions %r"%(event.pathname, self.include_extensions)
-            logger.debug("File %s excluded because its extension is not in the included extensions %r"%(event.pathname, self.include_extensions))
+            logger.debug("File %s excluded because its extension is not in the included extensions %r", event.pathname, self.include_extensions)
             return
         if self.exclude_extensions and any(event.pathname.endswith(ext) for ext in self.exclude_extensions):
             #print "File %s excluded because its extension is in the excluded extensions %r"%(event.pathname, self.exclude_extensions)
-            logger.debug("File %s excluded because its extension is in the excluded extensions %r"%(event.pathname, self.exclude_extensions))
+            logger.debug("File %s excluded because its extension is in the excluded extensions %r", event.pathname, self.exclude_extensions)
             return
         if self.exclude_re and self.exclude_re.search(os.path.basename(event.pathname)):
-            logger.debug("File %s excluded because its name matched exclude regexp '%s'"%(event.pathname, self.exclude_re_txt))
+            logger.debug("File %s excluded because its name matched exclude regexp '%s'", event.pathname, self.exclude_re_txt)
             return
 
         t = string.Template(self.command)
@@ -235,80 +235,80 @@ class EventHandler(pyinotify.ProcessEvent):
             args = shlex.split(command)
             if not self.background:
                 # sync exec
-                logger.info("Running command: '{0}'".format(command))
+                logger.info("Running command: '%s'", command)
                 process = subprocess.Popen(args, stdout=self.outfile, stderr=subprocess.STDOUT)
                 stdoutdata, _stderrdata = process.communicate()
                 if process.returncode == 0:
                     logger.info("Command finished successfully")
                 else:
-                    logger.info("Command failed, return code was {0}".format(process.returncode))
+                    logger.info("Command failed, return code was %s", process.returncode)
                 if self.log_output and stdoutdata:
-                    logger.info("Output was: '{0}'".format(stdoutdata))
+                    logger.info("Output was: '%s'", stdoutdata)
             else:
                 # async exec
                 process = subprocess.Popen(args, stdout=self.outfile, stderr=subprocess.STDOUT)
-                logger.info("Executed child ({0}): '{1}'".format(process.pid, command))
+                logger.info("Executed child (%s): '%s'", process.pid, command)
                 processes.append(process)
         except OSError as err:
             #print "Failed to run command '%s' %s" % (command, str(err))
-            logger.info("Failed to run command '%s' %s" % (command, str(err)))
+            logger.info("Failed to run command '%s' %s", command, str(err))
 
 
 
 
     def process_IN_ACCESS(self, event):
         #print "Access: %s"%(event.pathname)
-        logger.info("Access: %s"%(event.pathname))
+        logger.info("Access: %s", event.pathname)
         self.runCommand(event)
 
     def process_IN_ATTRIB(self, event):
         #print "Attrib: %s"%(event.pathname)
-        logger.info("Attrib: %s"%(event.pathname))
+        logger.info("Attrib: %s", event.pathname)
         self.runCommand(event)
 
     def process_IN_CLOSE_WRITE(self, event):
         #print "Close write: %s"%(event.pathname)
-        logger.info("Close write: %s"%(event.pathname))
+        logger.info("Close write: %s", event.pathname)
         self.runCommand(event)
 
     def process_IN_CLOSE_NOWRITE(self, event):
         #print "Close nowrite: %s"%(event.pathname)
-        logger.info("Close nowrite: %s"%(event.pathname))
+        logger.info("Close nowrite: %s", event.pathname)
         self.runCommand(event)
 
     def process_IN_CREATE(self, event):
         #print "Creating: %s"%(event.pathname)
-        logger.info("Creating: %s"%(event.pathname))
+        logger.info("Creating: %s", event.pathname)
         self.runCommand(event)
 
     def process_IN_DELETE(self, event):
         #print "Deleting: %s"%(event.pathname)
-        logger.info("Deleting: %s"%(event.pathname))
+        logger.info("Deleting: %s", event.pathname)
         self.runCommand(event)
 
     def process_IN_MODIFY(self, event):
         #print "Modify: %s"%(event.pathname)
-        logger.info("Modify: %s"%(event.pathname))
+        logger.info("Modify: %s", event.pathname)
         self.runCommand(event)
 
     def process_IN_MOVE_SELF(self, event):
         #print "Move self: %s"%(event.pathname)
-        logger.info("Move self: %s"%(event.pathname))
+        logger.info("Move self: %s", event.pathname)
         self.runCommand(event)
 
     def process_IN_MOVED_FROM(self, event):
         #print "Moved from: %s"%(event.pathname)
-        logger.info("Moved from: %s"%(event.pathname))
+        logger.info("Moved from: %s", event.pathname)
         self.runCommand(event)
 
     def process_IN_MOVED_TO(self, event):
         #print "Moved to: %s"%(event.pathname)
-        logger.info("Moved to: %s"%(event.pathname))
+        logger.info("Moved to: %s", event.pathname)
         self.runCommand(event)
 
     def process_IN_OPEN(self, event):
         #print "Opened: %s"%(event.pathname)
-        logger.info("Opened: %s"%(event.pathname))
+        logger.info("Opened: %s", event.pathname)
         self.runCommand(event)
 
 def watcher(config):
@@ -352,12 +352,12 @@ def watcher(config):
             if outfile:
                 t = string.Template(outfile)
                 outfile = t.substitute(job=section)
-                logger.debug("logging '{0}' output to '{1}'".format(section, outfile))
+                logger.debug("logging '%s' output to '%s'", section, outfile)
                 outfile_h = open(outfile, 'a+b', buffering=0)
             else:
-                logger.debug("logging '{0}' output to daemon log".format(section))
+                logger.debug("logging '%s' output to daemon log", section)
 
-        logger.info(section + ": " + folder)
+        logger.info("%s: watching '%s'", section, folder)
 
         # parse include_extensions
         if include_extensions and 'video' in include_extensions:
@@ -375,7 +375,7 @@ def watcher(config):
                     if k.startswith(excluded_dir):
                         wm.rm_watch(v)
                         wdds[section].pop(k)
-                logger.debug("Excluded dirs : " + excluded_dir)
+                logger.debug("Excluded dirs : %s", excluded_dir)
         # Create ThreadNotifier so that each job has its own thread
         notifiers[section] = pyinotify.ThreadedNotifier(wm, handler)
 
@@ -383,9 +383,9 @@ def watcher(config):
     for (name, notifier) in notifiers.items():
         try:
             notifier.start()
-            logger.debug('Notifier for %s is instanciated'%(name))
+            logger.debug('Notifier for %s is instanciated', name)
         except pyinotify.NotifierError as err:
-            logger.warning('%r %r'%(sys.stderr, err))
+            logger.warning('%r %r', sys.stderr, err)
 
     # Wait for SIGTERM
     try:
@@ -393,13 +393,13 @@ def watcher(config):
             for process in list(processes):
                 if process.poll():
                     if process.returncode == 0:
-                        logger.info("Child {0} finished successfully".format(process.pid))
+                        logger.info("Child %s finished successfully", process.pid)
                     else:
-                        logger.error("Child {0} failed, return code was {1}".format(process.pid, process.returncode))
+                        logger.error("Child %s failed, return code was %s", process.pid, process.returncode)
                     if process.stdout:
                         output = process.stdout.read()
                         if output:
-                            logger.info("Output was: '{0}'".format(output))
+                            logger.info("Output was: '%s'", output)
 
                     processes.remove(process)
             time.sleep(0.1)
@@ -407,7 +407,7 @@ def watcher(config):
         cleanup_notifiers(notifiers)
     if outfile:
         outfile_h.close()
-        logger.debug("closed %s"%outfile)
+        logger.debug("closed %s", outfile)
 
 def cleanup_notifiers(notifiers):
     """Close notifiers instances when the process is killed
@@ -475,7 +475,7 @@ def init_daemon(cf):
             uid = int(uid)
         except ValueError as e:
             if uid != '':
-                logger.warning('Incorrect uid value: %r' %(e))
+                logger.warning('Incorrect uid value: %r', e)
             uid = None
     # gid
     gid = cf.get('gid', None)
@@ -484,7 +484,7 @@ def init_daemon(cf):
             gid = int(gid)
         except ValueError as e:
             if gid != '':
-                logger.warning('Incorrect gid value: %r' %(e))
+                logger.warning('Incorrect gid value: %r', e)
             gid = None
 
     umask = cf.get('umask', None)
@@ -493,13 +493,13 @@ def init_daemon(cf):
             umask = int(umask)
         except ValueError as e:
             if umask != '':
-                logger.warning('Incorrect umask value: %r' %(e))
+                logger.warning('Incorrect umask value: %r', e)
             umask = None
 
     wd = cf.get('working_directory', None)
     if wd is not None and not os.path.isdir(wd):
         if wd != '':
-            logger.warning('Working directory not a valid directory ("%s"). Set to default ("/")' %(wd))
+            logger.warning('Working directory not a valid directory ("%s"). Set to default ("/")', wd)
         wd = None
 
     return {'pidfile': pidfile, 'stdin': None, 'stdout': None, 'stderr': None, 'uid': uid, 'gid': gid, 'umask': umask, 'working_directory': wd}
