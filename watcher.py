@@ -22,6 +22,7 @@ try:
     import configparser
 except ImportError:  # python 2 and configparser from pip not installed
     import ConfigParser as configparser
+
 try:
     basestring
 except NameError:  # python 3 compatibility
@@ -70,8 +71,8 @@ class DaemonRunner(object):
         self.func = func
         self.func_arg = func_arg
         self.daemon_context = daemon.DaemonContext(umask=umask or 0,
-                            working_directory=working_directory or '/',
-                            uid=uid, gid=gid)
+                                                   working_directory=working_directory or '/',
+                                                   uid=uid, gid=gid)
         self.daemon_context.stdin  = open(stdin or '/dev/null', 'rb')
         self.daemon_context.stdout = open(stdout or '/dev/null', 'w+b')
         self.daemon_context.stderr = open(stderr or '/dev/null', 'w+b', buffering=0)
@@ -90,7 +91,7 @@ class DaemonRunner(object):
             """
         self.stop()
         self.start()
-        
+
     def run(self):
         """ Run the application.
             """
@@ -99,7 +100,7 @@ class DaemonRunner(object):
     def start(self):
         """ Open the daemon context and run the application.
             """
-        status = is_pidfile_stale(self.pidfile)    
+        status = is_pidfile_stale(self.pidfile)
         if status == True:
             self.pidfile.break_lock()
         elif status == False:
@@ -107,7 +108,7 @@ class DaemonRunner(object):
             pid = self.pidfile.read_pid()
             logger.info("Daemon already running with PID %(pid)r" % vars())
             return
-            
+
         try:
             self.daemon_context.open()
         except lockfile.AlreadyLocked:
@@ -126,7 +127,7 @@ class DaemonRunner(object):
             pidfile_path = self.pidfile.path
             logger.info("PID file %(pidfile_path)r not locked" % vars())
             return
-            
+
         if is_pidfile_stale(self.pidfile):
             self.pidfile.break_lock()
         else:
@@ -155,7 +156,7 @@ class DaemonRunner(object):
 
         raise DaemonRunnerStopFailureError(
             "Failed to terminate %(pid)d" % vars())
-        
+
 def make_pidlockfile(path):
     """ Make a LockFile instance with the given filesystem path. """
     if not isinstance(path, basestring):
@@ -202,7 +203,7 @@ class EventHandler(pyinotify.ProcessEvent):
             self.outfile = outfile if outfile else subprocess.PIPE
         else:
             self.outfile = None
-        
+
     # from http://stackoverflow.com/questions/35817/how-to-escape-os-system-calls-in-python
     def shellquote(self, s):
         s = str(s)
@@ -247,7 +248,7 @@ class EventHandler(pyinotify.ProcessEvent):
                 # async exec
                 process = subprocess.Popen(args, stdout=self.outfile, stderr=subprocess.STDOUT)
                 logger.info("Executed child ({0}): '{1}'".format(process.pid, command))
-                processes.append( process )
+                processes.append(process)
         except OSError as err:
             #print "Failed to run command '%s' %s" % (command, str(err))
             logger.info("Failed to run command '%s' %s" % (command, str(err)))
@@ -367,10 +368,10 @@ def watcher(config):
         handler = EventHandler(section, folder, command, log_output, include_extensions, exclude_extensions, exclude_re, background, outfile_h)
 
         wdds[section] = wm.add_watch(folder, mask, rec=recursive, auto_add=autoadd)
-        # Remove watch about excluded dir. 
+        # Remove watch about excluded dir.
         if excluded:
-            for excluded_dir in excluded :
-                for (k,v) in wdds[section].items():
+            for excluded_dir in excluded:
+                for (k, v) in wdds[section].items():
                     if k.startswith(excluded_dir):
                         wm.rm_watch(v)
                         wdds[section].pop(k)
@@ -384,8 +385,8 @@ def watcher(config):
             notifier.start()
             logger.debug('Notifier for %s is instanciated'%(name))
         except pyinotify.NotifierError as err:
-            logger.warning( '%r %r'%(sys.stderr, err))
-    
+            logger.warning('%r %r'%(sys.stderr, err))
+
     # Wait for SIGTERM
     try:
         while 1:
@@ -400,14 +401,14 @@ def watcher(config):
                         if output:
                             logger.info("Output was: '{0}'".format(output))
 
-                    processes.remove( process )
+                    processes.remove(process)
             time.sleep(0.1)
     except:
         cleanup_notifiers(notifiers)
     if outfile:
         outfile_h.close()
         logger.debug("closed %s"%outfile)
-    
+
 def cleanup_notifiers(notifiers):
     """Close notifiers instances when the process is killed
     """
@@ -415,7 +416,7 @@ def cleanup_notifiers(notifiers):
         notifier.stop()
 
 def parseMask(masks):
-    ret = False;
+    ret = False
 
     for mask in masks:
         mask = mask.strip()
@@ -474,7 +475,7 @@ def init_daemon(cf):
             uid = int(uid)
         except ValueError as e:
             if uid != '':
-                logger.warning('Incorrect uid value: %r' %(e))    
+                logger.warning('Incorrect uid value: %r' %(e))
             uid = None
     # gid
     gid = cf.get('gid', None)
@@ -483,7 +484,7 @@ def init_daemon(cf):
             gid = int(gid)
         except ValueError as e:
             if gid != '':
-                logger.warning('Incorrect gid value: %r' %(e))    
+                logger.warning('Incorrect gid value: %r' %(e))
             gid = None
 
     umask = cf.get('umask', None)
@@ -492,22 +493,20 @@ def init_daemon(cf):
             umask = int(umask)
         except ValueError as e:
             if umask != '':
-                logger.warning('Incorrect umask value: %r' %(e))    
+                logger.warning('Incorrect umask value: %r' %(e))
             umask = None
 
     wd = cf.get('working_directory', None)
     if wd is not None and not os.path.isdir(wd):
         if wd != '':
-            logger.warning('Working directory not a valid directory ("%s"). Set to default ("/")' %(wd))    
+            logger.warning('Working directory not a valid directory ("%s"). Set to default ("/")' %(wd))
         wd = None
 
-    return {'pidfile':pidfile, 'stdin':None, 'stdout':None, 'stderr':None, 'uid':uid, 'gid':gid, 'umask':umask, 'working_directory':wd}
+    return {'pidfile': pidfile, 'stdin': None, 'stdout': None, 'stderr': None, 'uid': uid, 'gid': gid, 'umask': umask, 'working_directory': wd}
 
 if __name__ == "__main__":
     # Parse commandline arguments
-    parser = argparse.ArgumentParser(
-                description='A daemon to monitor changes within specified directories and run commands on these changes.',
-             )
+    parser = argparse.ArgumentParser(description='A daemon to monitor changes within specified directories and run commands on these changes.')
     parser.add_argument('-c', '--config',
                         action='store',
                         help='Path to the config file (default: %(default)s)')
@@ -526,16 +525,16 @@ if __name__ == "__main__":
         confok = config.read(args.config)
     else:
         # load config file from default locations
-        confok = config.read(['/etc/watcher.ini', os.path.expanduser('~/.watcher.ini')]);
+        confok = config.read(['/etc/watcher.ini', os.path.expanduser('~/.watcher.ini')])
     if not confok:
         sys.stderr.write("Failed to read config file. Try -c parameter\n")
-        sys.exit(4);
+        sys.exit(4)
 
     # Initialize logging
     if args.command == 'debug':
         loghandler = logging.StreamHandler()
         logger.setLevel(logging.DEBUG)
-    else: 
+    else:
         loghandler = logging.FileHandler(config.get('DEFAULT', 'logfile'))
     if args.verbose:
         logger.setLevel(logging.DEBUG)
@@ -549,7 +548,7 @@ if __name__ == "__main__":
     daemon = DaemonRunner(watcher, **options)
     # for background processes polling
     processes = []
-    
+
     # Execute the command
     if 'start' == args.command:
         daemon.start()
