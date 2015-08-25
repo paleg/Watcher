@@ -14,9 +14,9 @@ This fork is a rewritting of the code using python-daemon implementation of [PEP
 
 You need Python 2.7 and the following modules that can be installed with `pip`:
 
-*pyinotify
-*python-daemon
-*lockfile
+* [pyinotify](http://github.com/seb-m/pyinotify)
+* [python-daemon](https://alioth.debian.org/projects/python-daemon/)
+* [lockfile](https://launchpad.net/pylockfile)
 
 To install `pip` on Ubuntu:
 
@@ -25,6 +25,10 @@ To install `pip` on Ubuntu:
 To install the modules:
 
     sudo pip install python-daemon lockfile pyinotify
+
+For Python 3, install [python-daemon-3K](https://github.com/jbvsmo/python-daemon) instead of python-daemon:
+
+    sudo pip install python-daemon-3K lockfile pyinotify
 
 ## Configuration
 
