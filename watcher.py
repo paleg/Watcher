@@ -237,13 +237,13 @@ class EventHandler(pyinotify.ProcessEvent):
                 # sync exec
                 logger.info("Running command: '{0}'".format(command))
                 process = subprocess.Popen(args, stdout=self.outfile, stderr=subprocess.STDOUT)
-                output, code = process.communicate()
+                stdoutdata, _stderrdata = process.communicate()
                 if process.returncode == 0:
                     logger.info("Command finished successfully")
                 else:
                     logger.info("Command failed, return code was {0}".format(process.returncode))
-                if self.log_output and output:
-                    logger.info("Output was: '{0}'".format(output))
+                if self.log_output and stdoutdata:
+                    logger.info("Output was: '{0}'".format(stdoutdata))
             else:
                 # async exec
                 process = subprocess.Popen(args, stdout=self.outfile, stderr=subprocess.STDOUT)
