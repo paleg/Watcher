@@ -31,7 +31,8 @@ except NameError:  # python 3 compatibility
 
 logger = logging.getLogger("daemonlog")
 logger.setLevel(logging.INFO)
-logformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logformatter       = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logformatter_debug = logging.Formatter("%(asctime)s - %(levelname)s - %(threadName)s - %(funcName)s:%(lineno)d - %(message)s")
 
 # Video extensions
 VIDEO_EXTENSIONS = ('.3g2', '.3gp', '.3gp2', '.3gpp', '.60d', '.ajp', '.asf', '.asx', '.avchd', '.avi', '.bik',
@@ -356,6 +357,7 @@ def watcher(config):
                 logger.debug("Excluded dirs : %s", excluded_dir)
         # Create ThreadNotifier so that each job has its own thread
         notifiers[section] = pyinotify.ThreadedNotifier(wm, handler)
+        notifiers[section].setName("{0}_Thread".format(section))
 
     # Start all the notifiers.
     for (name, notifier) in notifiers.items():
@@ -525,7 +527,10 @@ if __name__ == "__main__":
         loghandler = logging.FileHandler(config.get('DEFAULT', 'logfile'))
     if args.verbose:
         logger.setLevel(logging.DEBUG)
-    loghandler.setFormatter(logformatter)
+    if logger.getEffectiveLevel() <= logging.DEBUG:
+        loghandler.setFormatter(logformatter_debug)
+    else:
+        loghandler.setFormatter(logformatter)
     logger.addHandler(loghandler)
 
     # Initialize the daemon
