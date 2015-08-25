@@ -371,7 +371,7 @@ def watcher(config):
     try:
         while 1:
             for process in list(processes):
-                if process.poll():
+                if process.poll() is not None:
                     if process.returncode == 0:
                         logger.info("Child %s finished successfully", process.pid)
                     else:
