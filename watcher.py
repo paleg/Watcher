@@ -212,7 +212,7 @@ class EventHandler(pyinotify.ProcessEvent):
             logger.debug("File %s excluded because its extension is in the excluded extensions %r", event.pathname, self.opts['exclude_extensions'])
             return
         if self.opts['exclude_re'] and self.opts['exclude_re'].search(os.path.basename(event.pathname)):
-            logger.debug("File %s excluded because its name matched exclude regexp '%s'", event.pathname, self.opts['exclude_re_txt'])
+            logger.debug("File '%s' excluded because its name matched exclude regexp '%s'", event.pathname, self.opts['exclude_re'].pattern)
             return
 
         t = string.Template(self.opts['command'])
