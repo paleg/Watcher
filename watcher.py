@@ -13,7 +13,8 @@ import signal, errno
 import pyinotify
 import argparse, string
 import logging, time
-import daemon, daemon.pidlockfile
+import daemon
+from daemon import pidlockfile
 import re
 import subprocess
 import shlex
@@ -111,7 +112,7 @@ class DaemonRunner(object):
 
         try:
             self.daemon_context.open()
-        except lockfile.AlreadyLocked:
+        except pidlockfile.AlreadyLocked:
             pidfile_path = self.pidfile.path
             logger.info("PID file %(pidfile_path)r already locked", vars())
             return
@@ -163,7 +164,7 @@ def make_pidlockfile(path):
         raise ValueError("Not a filesystem path: %(path)r" % vars())
     if not os.path.isabs(path):
         raise ValueError("Not an absolute path: %(path)r" % vars())
-    return daemon.pidlockfile.PIDLockFile(path)
+    return pidlockfile.PIDLockFile(path)
 
 def is_pidfile_stale(pidfile):
     """ Determine whether a PID file is stale.
