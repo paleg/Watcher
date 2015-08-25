@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+from __future__ import print_function, division, unicode_literals, absolute_import
 
 ##/usr/bin/env python
 ##
@@ -10,18 +11,35 @@
 import sys, os, grp
 import datetime, signal, errno
 import pyinotify
-import argparse, ConfigParser, string
+import argparse, string
 import logging, time
-import daemon
-try:
-    from daemon import pidlockfile
-except ImportError:
-    from daemon import pidfile as pidlockfile
+import daemon, lockfile
 import re
 import subprocess
 import shlex
 
-
+try:
+    import configparser
+except ImportError:  # python 2 and configparser from pip not installed
+    import ConfigParser as configparser
+try:
+    basestring
+except NameError:  # python 3 compatibility
+    basestring = str
+
+logger = logging.getLogger("daemonlog")
+logger.setLevel(logging.INFO)
+logformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+# Video extensions
+VIDEO_EXTENSIONS = ('.3g2', '.3gp', '.3gp2', '.3gpp', '.60d', '.ajp', '.asf', '.asx', '.avchd', '.avi', '.bik',
+                    '.bix', '.box', '.cam', '.dat', '.divx', '.dmf', '.dv', '.dvr-ms', '.evo', '.flc', '.fli',
+                    '.flic', '.flv', '.flx', '.gvi', '.gvp', '.h264', '.m1v', '.m2p', '.m2ts', '.m2v', '.m4e',
+                    '.m4v', '.mjp', '.mjpeg', '.mjpg', '.mkv', '.moov', '.mov', '.movhd', '.movie', '.movx', '.mp4',
+                    '.mpe', '.mpeg', '.mpg', '.mpv', '.mpv2', '.mxf', '.nsv', '.nut', '.ogg', '.ogm', '.omf', '.ps',
+                    '.qt', '.ram', '.rm', '.rmvb', '.swf', '.ts', '.vfw', '.vid', '.video', '.viv', '.vivo', '.vob',
+                    '.vro', '.wm', '.wmv', '.wmx', '.wrap', '.wvx', '.wx', '.x264', '.xvid')
+
 class DaemonRunnerError(Exception):
     """ Abstract base class for errors from DaemonRunner. """
 
@@ -34,7 +52,7 @@ class DaemonRunnerStartFailureError(RuntimeError, DaemonRunnerError):
 class DaemonRunnerStopFailureError(RuntimeError, DaemonRunnerError):
     """ Raised when failure stopping DaemonRunner. """
 
-
+
 class DaemonRunner(object):
     """ Controller for a callable running in a separate background process.
 
@@ -54,9 +72,9 @@ class DaemonRunner(object):
         self.daemon_context = daemon.DaemonContext(umask=umask or 0,
                             working_directory=working_directory or '/',
                             uid=uid, gid=gid)
-        self.daemon_context.stdin  = open(stdin or '/dev/null', 'r')
-        self.daemon_context.stdout = open(stdout or '/dev/null', 'w+')
-        self.daemon_context.stderr = open(stderr or '/dev/null', 'w+', buffering=0)
+        self.daemon_context.stdin  = open(stdin or '/dev/null', 'rb')
+        self.daemon_context.stdout = open(stdout or '/dev/null', 'w+b')
+        self.daemon_context.stderr = open(stderr or '/dev/null', 'w+b', buffering=0)
 
         self.pidfile = None
         if pidfile is not None:
@@ -92,7 +110,7 @@ class DaemonRunner(object):
             
         try:
             self.daemon_context.open()
-        except pidlockfile.AlreadyLocked:
+        except lockfile.AlreadyLocked:
             pidfile_path = self.pidfile.path
             logger.info("PID file %(pidfile_path)r already locked" % vars())
             return
@@ -139,14 +157,12 @@ class DaemonRunner(object):
             "Failed to terminate %(pid)d" % vars())
         
 def make_pidlockfile(path):
-    """ Make a PIDLockFile instance with the given filesystem path. """
+    """ Make a LockFile instance with the given filesystem path. """
     if not isinstance(path, basestring):
-        error = ValueError("Not a filesystem path: %(path)r" % vars())
-        raise error
+        raise ValueError("Not a filesystem path: %(path)r" % vars())
     if not os.path.isabs(path):
-        error = ValueError("Not an absolute path: %(path)r" % vars())
-        raise error
-    return pidlockfile.PIDLockFile(path)
+        raise ValueError("Not an absolute path: %(path)r" % vars())
+    return lockfile.LockFile(path)
 
 def is_pidfile_stale(pidfile):
     """ Determine whether a PID file is stale.
@@ -163,7 +179,7 @@ def is_pidfile_stale(pidfile):
     if pidfile_pid is not None:
         try:
             os.kill(pidfile_pid, signal.SIG_DFL)
-        except OSError, exc:
+        except OSError as exc:
             if exc.errno == errno.ESRCH:
                 # The specified PID does not exist
                 result = True
@@ -188,7 +204,7 @@ class EventHandler(pyinotify.ProcessEvent):
             self.outfile = None
         
     # from http://stackoverflow.com/questions/35817/how-to-escape-os-system-calls-in-python
-    def shellquote(self,s):
+    def shellquote(self, s):
         s = str(s)
         return "'" + s.replace("'", "'\\''") + "'"
 
@@ -232,7 +248,7 @@ class EventHandler(pyinotify.ProcessEvent):
                 process = subprocess.Popen(args, stdout=self.outfile, stderr=subprocess.STDOUT)
                 logger.info("Executed child ({0}): '{1}'".format(process.pid, command))
                 processes.append( process )
-        except OSError, err:
+        except OSError as err:
             #print "Failed to run command '%s' %s" % (command, str(err))
             logger.info("Failed to run command '%s' %s" % (command, str(err)))
 
@@ -342,6 +358,11 @@ def watcher(config):
 
         logger.info(section + ": " + folder)
 
+        # parse include_extensions
+        if include_extensions and 'video' in include_extensions:
+            include_extensions.discard('video')
+            include_extensions |= set(VIDEO_EXTENSIONS)
+
         wm = pyinotify.WatchManager()
         handler = EventHandler(section, folder, command, log_output, include_extensions, exclude_extensions, exclude_re, background, outfile_h)
 
@@ -358,7 +379,7 @@ def watcher(config):
         notifiers[section] = pyinotify.ThreadedNotifier(wm, handler)
 
     # Start all the notifiers.
-    for (name,notifier) in notifiers.iteritems():
+    for (name, notifier) in notifiers.items():
         try:
             notifier.start()
             logger.debug('Notifier for %s is instanciated'%(name))
@@ -499,7 +520,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Parse the config file
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     if args.config:
         # load config file specified by commandline
         confok = config.read(args.config)
@@ -511,9 +532,6 @@ if __name__ == "__main__":
         sys.exit(4);
 
     # Initialize logging
-    logger = logging.getLogger("daemonlog")
-    logger.setLevel(logging.INFO)
-    logformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     if args.command == 'debug':
         loghandler = logging.StreamHandler()
         logger.setLevel(logging.DEBUG)
@@ -547,6 +565,6 @@ if __name__ == "__main__":
         daemon.run()
         #logger.info('Debug mode')
     else:
-        print "Unkown Command"
+        print("Unknown Command")
         sys.exit(2)
     sys.exit(0)
