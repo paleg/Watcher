@@ -189,21 +189,14 @@ def is_pidfile_stale(pidfile):
     return result
 
 class EventHandler(pyinotify.ProcessEvent):
-    def __init__(self, job, folder, command, log_output, include_extensions, exclude_extensions, exclude_re, background, outfile):
+    def __init__(self, **opts):
         pyinotify.ProcessEvent.__init__(self)
-        self.job = job
-        self.folder = folder
-        self.command = command
-        self.include_extensions = include_extensions
-        self.exclude_extensions = exclude_extensions
-        self.exclude_re_txt = exclude_re
-        self.exclude_re = None if not exclude_re else re.compile(exclude_re)
-        self.background = background
-        self.log_output = log_output
-        if self.log_output:
-            self.outfile = outfile if outfile else subprocess.PIPE
+        self.opts = opts
+        self.opts['exclude_re'] = None if not self.opts['exclude_re'] else re.compile(self.opts['exclude_re'])
+        if self.opts['log_output']:
+            self.opts['outfile'] = self.opts['outfile'] if self.opts['outfile'] else subprocess.PIPE
         else:
-            self.outfile = None
+            self.opts['outfile'] = None
 
     # from http://stackoverflow.com/questions/35817/how-to-escape-os-system-calls-in-python
     def shellquote(self, s):
@@ -212,21 +205,19 @@ class EventHandler(pyinotify.ProcessEvent):
 
     def runCommand(self, event):
         # if specified, exclude extensions, or include extensions.
-        if self.include_extensions and all(not event.pathname.endswith(ext) for ext in self.include_extensions):
-            #print "File %s excluded because its exension is not in the included extensions %r"%(event.pathname, self.include_extensions)
-            logger.debug("File %s excluded because its extension is not in the included extensions %r", event.pathname, self.include_extensions)
+        if self.opts['include_extensions'] and all(not event.pathname.endswith(ext) for ext in self.opts['include_extensions']):
+            logger.debug("File %s excluded because its extension is not in the included extensions %r", event.pathname, self.opts['include_extensions'])
             return
-        if self.exclude_extensions and any(event.pathname.endswith(ext) for ext in self.exclude_extensions):
-            #print "File %s excluded because its extension is in the excluded extensions %r"%(event.pathname, self.exclude_extensions)
-            logger.debug("File %s excluded because its extension is in the excluded extensions %r", event.pathname, self.exclude_extensions)
+        if self.opts['exclude_extensions'] and any(event.pathname.endswith(ext) for ext in self.opts['exclude_extensions']):
+            logger.debug("File %s excluded because its extension is in the excluded extensions %r", event.pathname, self.opts['exclude_extensions'])
             return
-        if self.exclude_re and self.exclude_re.search(os.path.basename(event.pathname)):
-            logger.debug("File %s excluded because its name matched exclude regexp '%s'", event.pathname, self.exclude_re_txt)
+        if self.opts['exclude_re'] and self.opts['exclude_re'].search(os.path.basename(event.pathname)):
+            logger.debug("File %s excluded because its name matched exclude regexp '%s'", event.pathname, self.opts['exclude_re_txt'])
             return
 
-        t = string.Template(self.command)
-        command = t.substitute(job=self.shellquote(self.job),
-                               folder=self.shellquote(self.folder),
+        t = string.Template(self.opts['command'])
+        command = t.substitute(job=self.shellquote(self.opts['job']),
+                               folder=self.shellquote(self.opts['folder']),
                                watched=self.shellquote(event.path),
                                filename=self.shellquote(event.pathname),
                                tflags=self.shellquote(event.maskname),
@@ -234,28 +225,24 @@ class EventHandler(pyinotify.ProcessEvent):
                                cookie=self.shellquote(event.cookie if hasattr(event, "cookie") else 0))
         try:
             args = shlex.split(command)
-            if not self.background:
+            if not self.opts['background']:
                 # sync exec
                 logger.info("Running command: '%s'", command)
-                process = subprocess.Popen(args, stdout=self.outfile, stderr=subprocess.STDOUT)
+                process = subprocess.Popen(args, stdout=self.opts['outfile'], stderr=subprocess.STDOUT)
                 stdoutdata, _stderrdata = process.communicate()
                 if process.returncode == 0:
                     logger.info("Command finished successfully")
                 else:
                     logger.info("Command failed, return code was %s", process.returncode)
-                if self.log_output and stdoutdata:
+                if self.opts['log_output'] and stdoutdata:
                     logger.info("Output was: '%s'", stdoutdata)
             else:
                 # async exec
-                process = subprocess.Popen(args, stdout=self.outfile, stderr=subprocess.STDOUT)
+                process = subprocess.Popen(args, stdout=self.opts['outfile'], stderr=subprocess.STDOUT)
                 logger.info("Executed child (%s): '%s'", process.pid, command)
                 processes.append(process)
         except OSError as err:
-            #print "Failed to run command '%s' %s" % (command, str(err))
             logger.info("Failed to run command '%s' %s", command, str(err))
-
-
-
 
     def process_IN_ACCESS(self, event):
         #print "Access: %s"%(event.pathname)
@@ -366,7 +353,15 @@ def watcher(config):
             include_extensions |= set(VIDEO_EXTENSIONS)
 
         wm = pyinotify.WatchManager()
-        handler = EventHandler(section, folder, command, log_output, include_extensions, exclude_extensions, exclude_re, background, outfile_h)
+        handler = EventHandler(job = section,
+                               folder = folder,
+                               command = command,
+                               log_output = log_output,
+                               include_extensions = include_extensions,
+                               exclude_extensions = exclude_extensions,
+                               exclude_re = exclude_re,
+                               background = background,
+                               outfile = outfile_h)
 
         wdds[section] = wm.add_watch(folder, mask, rec=recursive, auto_add=autoadd)
         # Remove watch about excluded dir.
@@ -500,7 +495,7 @@ def init_daemon(cf):
     wd = cf.get('working_directory', None)
     if wd is not None and not os.path.isdir(wd):
         if wd != '':
-            logger.warning('Working directory not a valid directory ("%s"). Set to default ("/")', wd)
+            logger.warning('Working directory is not a valid directory ("%s"). Set to default ("/")', wd)
         wd = None
 
     return {'pidfile': pidfile, 'stdin': None, 'stdout': None, 'stderr': None, 'uid': uid, 'gid': gid, 'umask': umask, 'working_directory': wd}
