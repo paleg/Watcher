@@ -192,11 +192,6 @@ class EventHandler(pyinotify.ProcessEvent):
     def __init__(self, **opts):
         pyinotify.ProcessEvent.__init__(self)
         self.opts = opts
-        self.opts['exclude_re'] = None if not self.opts['exclude_re'] else re.compile(self.opts['exclude_re'])
-        if self.opts['log_output']:
-            self.opts['outfile'] = self.opts['outfile'] if self.opts['outfile'] else subprocess.PIPE
-        else:
-            self.opts['outfile'] = None
 
     # from http://stackoverflow.com/questions/35817/how-to-escape-os-system-calls-in-python
     def shellquote(self, s):
@@ -206,10 +201,10 @@ class EventHandler(pyinotify.ProcessEvent):
     def runCommand(self, event):
         # if specified, exclude extensions, or include extensions.
         if self.opts['include_extensions'] and all(not event.pathname.endswith(ext) for ext in self.opts['include_extensions']):
-            logger.debug("File %s excluded because its extension is not in the included extensions %r", event.pathname, self.opts['include_extensions'])
+            logger.debug("File '%s' excluded because its extension is not in the included extensions %r", event.pathname, self.opts['include_extensions'])
             return
         if self.opts['exclude_extensions'] and any(event.pathname.endswith(ext) for ext in self.opts['exclude_extensions']):
-            logger.debug("File %s excluded because its extension is in the excluded extensions %r", event.pathname, self.opts['exclude_extensions'])
+            logger.debug("File '%s' excluded because its extension is in the excluded extensions %r", event.pathname, self.opts['exclude_extensions'])
             return
         if self.opts['exclude_re'] and self.opts['exclude_re'].search(os.path.basename(event.pathname)):
             logger.debug("File '%s' excluded because its name matched exclude regexp '%s'", event.pathname, self.opts['exclude_re'].pattern)
@@ -305,38 +300,23 @@ def watcher(config):
 
     # read jobs from config file
     for section in config.sections():
-        # get the basic config info
+        # mandatory opts
         mask      = parseMask(config.get(section, 'events').split(','))
         folder    = config.get(section, 'watch')
+        command   = config.get(section, 'command')
+        # optional opts (i.e. with default values)
         recursive = config.getboolean(section, 'recursive')
         autoadd   = config.getboolean(section, 'autoadd')
-        excluded  = None if '' in config.get(section, 'excluded').split(',') else set(config.get(section, 'excluded').split(','))
-        include_extensions = None if '' in config.get(section, 'include_extensions').split(',') else set(config.get(section, 'include_extensions').split(','))
-        exclude_extensions = None if '' in config.get(section, 'exclude_extensions').split(',') else set(config.get(section, 'exclude_extensions').split(','))
-        command   = config.get(section, 'command')
+        excluded  = None if not config.get(section, 'excluded') else set(config.get(section, 'excluded').split(','))
+        include_extensions = None if not config.get(section, 'include_extensions') else set(config.get(section, 'include_extensions').split(','))
+        exclude_extensions = None if not config.get(section, 'exclude_extensions') else set(config.get(section, 'exclude_extensions').split(','))
+        exclude_re = None if not config.get(section, 'exclude_re') else re.compile(config.get(section, 'exclude_re'))
+        background = config.getboolean(section, 'background')
+        log_output = config.getboolean(section, 'log_output')
 
-        try:
-            exclude_re = None if not config.get(section, 'exclude_re') else config.get(section, 'exclude_re')
-        except configparser.NoOptionError:
-            exclude_re = None
-
-        try:
-            background = config.getboolean(section, 'background')
-        except (configparser.NoOptionError, ValueError):
-            background = False
-
-        try:
-            log_output = config.getboolean(section, 'log_output')
-        except (configparser.NoOptionError, ValueError):
-            log_output = True
-
-        outfile = ''
         outfile_h = None
         if log_output:
-            try:
-                outfile = config.get(section, 'outfile')
-            except configparser.NoOptionError:
-                pass
+            outfile = config.get(section, 'outfile')
             if outfile:
                 t = string.Template(outfile)
                 outfile = t.substitute(job=section)
@@ -344,6 +324,7 @@ def watcher(config):
                 outfile_h = open(outfile, 'a+b', buffering=0)
             else:
                 logger.debug("logging '%s' output to daemon log", section)
+                outfile_h = subprocess.PIPE
 
         logger.info("%s: watching '%s'", section, folder)
 
@@ -361,7 +342,8 @@ def watcher(config):
                                exclude_extensions = exclude_extensions,
                                exclude_re = exclude_re,
                                background = background,
-                               outfile = outfile_h)
+                               outfile = outfile_h
+                              )
 
         wdds[section] = wm.add_watch(folder, mask, rec=recursive, auto_add=autoadd)
         # Remove watch about excluded dir.
@@ -515,7 +497,16 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Parse the config file
-    config = configparser.ConfigParser()
+    config = configparser.ConfigParser({'recursive': "true",
+                                        'autoadd': "true",
+                                        'excluded': None,
+                                        'include_extensions': None,
+                                        'exclude_extensions': None,
+                                        'exclude_re': None,
+                                        'background': "false",
+                                        'log_output': "true",
+                                        'outfile': None
+                                       })
     if args.config:
         # load config file specified by commandline
         confok = config.read(args.config)
