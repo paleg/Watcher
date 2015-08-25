@@ -328,17 +328,17 @@ def watcher(config):
 
         try:
             exclude_re = None if not config.get(section, 'exclude_re') else config.get(section, 'exclude_re')
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             exclude_re = None
 
         try:
             background = config.getboolean(section, 'background')
-        except (ConfigParser.NoOptionError, ValueError):
+        except (configparser.NoOptionError, ValueError):
             background = False
 
         try:
             log_output = config.getboolean(section, 'log_output')
-        except (ConfigParser.NoOptionError, ValueError):
+        except (configparser.NoOptionError, ValueError):
             log_output = True
 
         outfile = ''
@@ -346,7 +346,7 @@ def watcher(config):
         if log_output:
             try:
                 outfile = config.get(section, 'outfile')
-            except ConfigParser.NoOptionError:
+            except configparser.NoOptionError:
                 pass
             if outfile:
                 t = string.Template(outfile)
