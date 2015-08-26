@@ -194,11 +194,25 @@ def shellquote(s):
     s = str(s)
     return "'" + s.replace("'", "'\\''") + "'"
 
+def post_action(cmd, job, output):
+    if not cmd: return
+
+    t = string.Template(cmd)
+    command = t.substitute(job=shellquote(job),
+                           output=shellquote(output))
+    try:
+        output = subprocess.check_output(command, stderr=subprocess.STDOUT, shell = True)
+        logger.debug("post action succeed: '%s'", output)
+    except subprocess.CalledProcessError as err:
+        logger.error("post action failed, return code was %s: '%s'", err.returncode, err.output)
+
 def process_report(process, opts, stdoutdata):
     prefix = "Child {0}".format(process.pid) if opts['background'] else "Command"
     if process.returncode == 0:
+        post_action(opts['action_on_success'], opts['job'], stdoutdata)
         msg = "{0} finished successfully".format(prefix)
     else:
+        post_action(opts['action_on_failure'], opts['job'], stdoutdata)
         msg = "{0} failed, return code was {1}".format(prefix, process.returncode)
     logger.info(msg)
 
@@ -334,6 +348,9 @@ def watcher(config):
         elif log_output:
             logger.debug("logging '%s' output to daemon log", section)
 
+        action_on_success = config.get(section, 'action_on_success')
+        action_on_failure = config.get(section, 'action_on_failure')
+
         logger.info("%s: watching '%s'", section, folder)
 
         # parse include_extensions
@@ -350,6 +367,8 @@ def watcher(config):
                                exclude_extensions = exclude_extensions,
                                exclude_re = exclude_re,
                                background = background,
+                               action_on_success = action_on_success,
+                               action_on_failure = action_on_failure,
                                outfile = outfile
                               )
 
@@ -508,6 +527,8 @@ if __name__ == "__main__":
                                         'exclude_re': None,
                                         'background': "false",
                                         'log_output': "true",
+                                        'action_on_success': None,
+                                        'action_on_failure': None,
                                         'outfile': None
                                        })
     if args.config:
