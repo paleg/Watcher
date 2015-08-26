@@ -247,8 +247,8 @@ class EventHandler(pyinotify.ProcessEvent):
                 process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 logger.info("Executed child (%s): '%s'", process.pid, command)
                 processes[process] = self.opts
-        except OSError as err:
-            logger.info("Failed to run command '%s' %s", command, str(err))
+        except Exception as err:
+            logger.exception("Failed to run command '%s':", command)
 
     def process_IN_ACCESS(self, event):
         #print "Access: %s"%(event.pathname)
