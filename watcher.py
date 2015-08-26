@@ -189,6 +189,11 @@ def is_pidfile_stale(pidfile):
 
     return result
 
+# from http://stackoverflow.com/questions/35817/how-to-escape-os-system-calls-in-python
+def shellquote(s):
+    s = str(s)
+    return "'" + s.replace("'", "'\\''") + "'"
+
 def process_report(process, opts, stdoutdata):
     prefix = "Child {0}".format(process.pid) if opts['background'] else "Command"
     if process.returncode == 0:
@@ -209,11 +214,6 @@ class EventHandler(pyinotify.ProcessEvent):
         pyinotify.ProcessEvent.__init__(self)
         self.opts = opts
 
-    # from http://stackoverflow.com/questions/35817/how-to-escape-os-system-calls-in-python
-    def shellquote(self, s):
-        s = str(s)
-        return "'" + s.replace("'", "'\\''") + "'"
-
     def runCommand(self, event):
         # if specified, exclude extensions, or include extensions.
         if self.opts['include_extensions'] and all(not event.pathname.endswith(ext) for ext in self.opts['include_extensions']):
@@ -227,13 +227,13 @@ class EventHandler(pyinotify.ProcessEvent):
             return
 
         t = string.Template(self.opts['command'])
-        command = t.substitute(job=self.shellquote(self.opts['job']),
-                               folder=self.shellquote(self.opts['folder']),
-                               watched=self.shellquote(event.path),
-                               filename=self.shellquote(event.pathname),
-                               tflags=self.shellquote(event.maskname),
-                               nflags=self.shellquote(event.mask),
-                               cookie=self.shellquote(event.cookie if hasattr(event, "cookie") else 0))
+        command = t.substitute(job=shellquote(self.opts['job']),
+                               folder=shellquote(self.opts['folder']),
+                               watched=shellquote(event.path),
+                               filename=shellquote(event.pathname),
+                               tflags=shellquote(event.maskname),
+                               nflags=shellquote(event.mask),
+                               cookie=shellquote(event.cookie if hasattr(event, "cookie") else 0))
         try:
             args = shlex.split(command)
             if not self.opts['background']:
