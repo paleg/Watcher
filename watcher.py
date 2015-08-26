@@ -377,12 +377,15 @@ def watcher(config):
     # Wait for SIGTERM
     try:
         while 1:
-            # build new list as we want to change dict on-fly
-            for process, opts in list(processes.items()):
-                if process.poll() is not None:
-                    stdoutdata = process.stdout.read()
-                    process_report(process, opts, stdoutdata)
-                    del processes[process]
+            try:
+                # build new list as we want to change dict on-fly
+                for process, opts in list(processes.items()):
+                    if process.poll() is not None:
+                        stdoutdata = process.stdout.read()
+                        process_report(process, opts, stdoutdata)
+                        del processes[process]
+            except Exception as err:
+                logger.exception("Failed to collect children:")
             time.sleep(0.1)
     except:
         cleanup_notifiers(notifiers)
