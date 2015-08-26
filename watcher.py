@@ -364,7 +364,7 @@ def watcher(config):
                 logger.debug("Excluded dirs : %s", excluded_dir)
         # Create ThreadNotifier so that each job has its own thread
         notifiers[section] = pyinotify.ThreadedNotifier(wm, handler)
-        notifiers[section].setName("{0}_Thread".format(section))
+        notifiers[section].setName(section)
 
     # Start all the notifiers.
     for (name, notifier) in notifiers.items():
