@@ -189,6 +189,21 @@ def is_pidfile_stale(pidfile):
 
     return result
 
+def process_report(process, opts, stdoutdata):
+    prefix = "Child {0}".format(process.pid) if opts['background'] else "Command"
+    if process.returncode == 0:
+        msg = "{0} finished successfully".format(prefix)
+    else:
+        msg = "{0} failed, return code was {1}".format(prefix, process.returncode)
+    logger.info(msg)
+
+    if opts['log_output']:
+        if opts['outfile']:
+            with open(opts['outfile'], 'a+b') as fh:
+                fh.write(stdoutdata)
+        else:
+            logger.info("Output was: '%s'", stdoutdata)
+
 class EventHandler(pyinotify.ProcessEvent):
     def __init__(self, **opts):
         pyinotify.ProcessEvent.__init__(self)
@@ -224,19 +239,14 @@ class EventHandler(pyinotify.ProcessEvent):
             if not self.opts['background']:
                 # sync exec
                 logger.info("Running command: '%s'", command)
-                process = subprocess.Popen(args, stdout=self.opts['outfile'], stderr=subprocess.STDOUT)
-                stdoutdata, _stderrdata = process.communicate()
-                if process.returncode == 0:
-                    logger.info("Command finished successfully")
-                else:
-                    logger.info("Command failed, return code was %s", process.returncode)
-                if self.opts['log_output'] and stdoutdata:
-                    logger.info("Output was: '%s'", stdoutdata)
+                process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                stdoutdata, _ = process.communicate()
+                process_report(process, self.opts, stdoutdata)
             else:
                 # async exec
-                process = subprocess.Popen(args, stdout=self.opts['outfile'], stderr=subprocess.STDOUT)
+                process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 logger.info("Executed child (%s): '%s'", process.pid, command)
-                processes.append(process)
+                processes[process] = self.opts
         except OSError as err:
             logger.info("Failed to run command '%s' %s", command, str(err))
 
@@ -315,17 +325,14 @@ def watcher(config):
         background = config.getboolean(section, 'background')
         log_output = config.getboolean(section, 'log_output')
 
-        outfile_h = None
-        if log_output:
-            outfile = config.get(section, 'outfile')
-            if outfile:
-                t = string.Template(outfile)
-                outfile = t.substitute(job=section)
-                logger.debug("logging '%s' output to '%s'", section, outfile)
-                outfile_h = open(outfile, 'a+b', buffering=0)
-            else:
-                logger.debug("logging '%s' output to daemon log", section)
-                outfile_h = subprocess.PIPE
+        outfile = config.get(section, 'outfile')
+        if outfile:
+            t = string.Template(outfile)
+            outfile = t.substitute(job=section)
+            if log_output:
+               logger.debug("logging '%s' output to '%s'", section, outfile)
+        elif log_output:
+            logger.debug("logging '%s' output to daemon log", section)
 
         logger.info("%s: watching '%s'", section, folder)
 
@@ -343,7 +350,7 @@ def watcher(config):
                                exclude_extensions = exclude_extensions,
                                exclude_re = exclude_re,
                                background = background,
-                               outfile = outfile_h
+                               outfile = outfile
                               )
 
         wdds[section] = wm.add_watch(folder, mask, rec=recursive, auto_add=autoadd)
@@ -370,24 +377,15 @@ def watcher(config):
     # Wait for SIGTERM
     try:
         while 1:
-            for process in list(processes):
+            # build new list as we want to change dict on-fly
+            for process, opts in list(processes.items()):
                 if process.poll() is not None:
-                    if process.returncode == 0:
-                        logger.info("Child %s finished successfully", process.pid)
-                    else:
-                        logger.error("Child %s failed, return code was %s", process.pid, process.returncode)
-                    if process.stdout:
-                        output = process.stdout.read()
-                        if output:
-                            logger.info("Output was: '%s'", output)
-
-                    processes.remove(process)
+                    stdoutdata = process.stdout.read()
+                    process_report(process, opts, stdoutdata)
+                    del processes[process]
             time.sleep(0.1)
     except:
         cleanup_notifiers(notifiers)
-    if outfile:
-        outfile_h.close()
-        logger.debug("closed %s", outfile)
 
 def cleanup_notifiers(notifiers):
     """Close notifiers instances when the process is killed
@@ -539,7 +537,7 @@ if __name__ == "__main__":
     options['func_arg'] = config
     daemon = DaemonRunner(watcher, **options)
     # for background processes polling
-    processes = []
+    processes = {}
 
     # Execute the command
     if 'start' == args.command:
