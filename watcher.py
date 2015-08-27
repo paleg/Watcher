@@ -18,6 +18,7 @@ from daemon import pidlockfile
 import re
 import subprocess
 import shlex
+import socket
 
 try:
     import configparser
@@ -199,6 +200,7 @@ def post_action(cmd, job, output):
 
     t = string.Template(cmd)
     command = t.substitute(job=shellquote(job),
+                           host=shellquote(socket.gethostname()),
                            output=shellquote(output))
     try:
         output = subprocess.check_output(command, stderr=subprocess.STDOUT, shell = True)
