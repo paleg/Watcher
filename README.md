@@ -17,14 +17,15 @@ You need Python 2.7 and the following modules that can be installed with your pa
 * [pyinotify](http://github.com/seb-m/pyinotify)
 * [python-daemon](https://alioth.debian.org/projects/python-daemon/)
 * [lockfile](https://launchpad.net/pylockfile)
+* [chardet](https://chardet.github.io/)
 
 To install modules on Debian:
 
-    sudo apt-get install python-pyinotify python-daemon python-lockfile
+    sudo apt-get install python-pyinotify python-daemon python-lockfile python-chardet
     
 To install modules on Gentoo:
 
-    emerge -av dev-python/pyinotify dev-python/python-daemon dev-python/lockfile
+    emerge -av dev-python/pyinotify dev-python/python-daemon dev-python/lockfile dev-python/chardet
 
 To install `pip` on Ubuntu:
 
@@ -32,11 +33,11 @@ To install `pip` on Ubuntu:
 
 To install the modules:
 
-    sudo pip install python-daemon lockfile pyinotify
+    sudo pip install python-daemon lockfile pyinotify chardet
 
 For Python 3, install [python-daemon-3K](https://github.com/jbvsmo/python-daemon) instead of python-daemon:
 
-    sudo pip install python-daemon-3K lockfile pyinotify
+    sudo pip install python-daemon-3K lockfile pyinotify chardet
 
 ## Configuration
 

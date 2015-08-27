@@ -19,6 +19,7 @@ import re
 import subprocess
 import shlex
 import socket
+import chardet
 
 try:
     import configparser
@@ -192,11 +193,21 @@ def is_pidfile_stale(pidfile):
 
 # from http://stackoverflow.com/questions/35817/how-to-escape-os-system-calls-in-python
 def shellquote(s):
-    s = str(s)
+    # prevent converting unicode to str on python2 (causes UnicodeEncodeError)
+    if not isinstance(s, str if sys.version_info[0] == 3 else basestring):
+        s = str(s)
     return "'" + s.replace("'", "'\\''") + "'"
 
 def post_action(cmd, job, output):
     if not cmd: return
+
+    try:
+        # convert output to unicode
+        enc = chardet.detect(output)['encoding']
+        output = output.decode(enc)
+    except Exception as err:
+        logger.exception("Failed to convert output:")
+        output = "unparsable output"
 
     t = string.Template(cmd)
     command = t.substitute(job=shellquote(job),
