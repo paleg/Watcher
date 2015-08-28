@@ -194,7 +194,7 @@ def is_pidfile_stale(pidfile):
 # from http://stackoverflow.com/questions/35817/how-to-escape-os-system-calls-in-python
 def shellquote(s):
     # prevent converting unicode to str on python2 (causes UnicodeEncodeError)
-    if not isinstance(s, str if sys.version_info[0] == 3 else basestring):
+    if not isinstance(s, basestring):
         s = str(s)
     return "'" + s.replace("'", "'\\''") + "'"
 
