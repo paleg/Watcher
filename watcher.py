@@ -390,9 +390,12 @@ def watcher(config):
         if excluded:
             for excluded_dir in excluded:
                 for (k, v) in wdds[section].items():
-                    if k.startswith(excluded_dir):
-                        wm.rm_watch(v)
-                        wdds[section].pop(k)
+                    try:
+                        if k.startswith(excluded_dir):
+                            wm.rm_watch(v)
+                            wdds[section].pop(k)
+                    except UnicodeDecodeError as ex:
+                        logger.exception("Failed to check exclude for %r (decoding error)", k)
                 logger.debug("Excluded dirs : %s", excluded_dir)
         # Create ThreadNotifier so that each job has its own thread
         notifiers[section] = pyinotify.ThreadedNotifier(wm, handler)
