@@ -82,6 +82,9 @@ class DaemonRunner(object):
         self.daemon_context = daemon.DaemonContext(umask=umask or 0,
                                                    working_directory=working_directory or '/',
                                                    uid=uid, gid=gid)
+        # python-daemon>=2.1 has initgroups=True by default but it requires root privs;
+        # older versions don't support initgroups as constructor parameter so we set it manually instead:
+        self.daemon_context.initgroups = False
         self.daemon_context.stdin  = open(stdin or '/dev/null', 'rb')
         self.daemon_context.stdout = open(stdout or '/dev/null', 'w+b')
         self.daemon_context.stderr = open(stderr or '/dev/null', 'w+b', buffering=0)
