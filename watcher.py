@@ -26,6 +26,8 @@ import shlex
 import socket
 import chardet
 
+from tempfile import NamedTemporaryFile
+
 try:
     import configparser
 except ImportError:  # python 2 and configparser from pip not installed
@@ -244,6 +246,17 @@ def process_report(process, opts, stdoutdata):
         else:
             logger.info("Output was: '%s'", stdoutdata)
 
+def get_stdout_log(logHandler):
+    try:
+        logHandler.seek(0)
+        stdoutdata = logHandler.read()
+        logHandler.close()
+    except Exception as err:
+        logger.exception("Failed to get stdout log")
+        # use encode to be compatible with python3
+        stdoutdata = "".encode()
+    return stdoutdata
+
 class EventHandler(pyinotify.ProcessEvent):
     def __init__(self, **opts):
         pyinotify.ProcessEvent.__init__(self)
@@ -270,18 +283,21 @@ class EventHandler(pyinotify.ProcessEvent):
                                nflags=shellquote(event.mask),
                                cookie=shellquote(event.cookie if hasattr(event, "cookie") else 0))
         try:
+            logHandler = NamedTemporaryFile(prefix="watcher-", suffix=".log")
+
             args = shlex.split(command)
             if not self.opts['background']:
                 # sync exec
-                logger.info("Running command: '%s'", command)
-                process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                stdoutdata, _ = process.communicate()
+                logger.info("Running command: '%s', temp log file: '%s'", command, logHandler.name)
+                process = subprocess.Popen(args, stdout=logHandler, stderr=subprocess.STDOUT)
+                process.communicate()
+                stdoutdata = get_stdout_log(logHandler)
                 process_report(process, self.opts, stdoutdata)
             else:
                 # async exec
-                process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                logger.info("Executed child (%s): '%s'", process.pid, command)
-                processes[process] = self.opts
+                process = subprocess.Popen(args, stdout=logHandler, stderr=subprocess.STDOUT)
+                logger.info("Executed child (%s): '%s', temp log file: '%s'", process.pid, command, logHandler.name)
+                processes[process] = { 'opts': self.opts, 'logHandler': logHandler }
         except Exception as err:
             logger.exception("Failed to run command '%s':", command)
 
@@ -422,10 +438,10 @@ def watcher(config):
         while 1:
             try:
                 # build new list as we want to change dict on-fly
-                for process, opts in list(processes.items()):
+                for process in list(processes):
                     if process.poll() is not None:
-                        stdoutdata = process.stdout.read()
-                        process_report(process, opts, stdoutdata)
+                        stdoutdata = get_stdout_log(processes[process]['logHandler'])
+                        process_report(process, processes[process]['opts'], stdoutdata)
                         del processes[process]
             except Exception as err:
                 logger.exception("Failed to collect children:")
