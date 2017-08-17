@@ -258,8 +258,9 @@ def get_stdout_log(logHandler):
     return stdoutdata
 
 class EventHandler(pyinotify.ProcessEvent):
-    def __init__(self, **opts):
+    def __init__(self, processes, **opts):
         pyinotify.ProcessEvent.__init__(self)
+        self.processes = processes
         self.opts = opts
 
     def runCommand(self, event):
@@ -297,7 +298,7 @@ class EventHandler(pyinotify.ProcessEvent):
                 # async exec
                 process = subprocess.Popen(args, stdout=logHandler, stderr=subprocess.STDOUT)
                 logger.info("Executed child (%s): '%s', temp log file: '%s'", process.pid, command, logHandler.name)
-                processes[process] = { 'opts': self.opts, 'logHandler': logHandler }
+                self.processes[process] = { 'opts': self.opts, 'logHandler': logHandler }
         except Exception as err:
             logger.exception("Failed to run command '%s':", command)
 
@@ -357,6 +358,9 @@ class EventHandler(pyinotify.ProcessEvent):
         self.runCommand(event)
 
 def watcher(config):
+    # for background processes polling
+    processes = {}
+
     wdds      = dict()
     notifiers = dict()
 
@@ -396,7 +400,8 @@ def watcher(config):
             include_extensions |= set(VIDEO_EXTENSIONS)
 
         wm = pyinotify.WatchManager()
-        handler = EventHandler(job = section,
+        handler = EventHandler(processes,
+                               job = section,
                                folder = folder,
                                command = command,
                                log_output = log_output,
@@ -600,8 +605,6 @@ if __name__ == "__main__":
     options['files_preserve'] = [loghandler.stream]
     options['func_arg'] = config
     daemon = DaemonRunner(watcher, **options)
-    # for background processes polling
-    processes = {}
 
     # Execute the command
     if 'start' == args.command:
