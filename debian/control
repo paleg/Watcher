@@ -1,0 +1,27 @@
+Source: fs-watcher
+Maintainer: Oleg Palij <o.palij@gmail.com>
+Section: utils
+Priority: optional
+Build-Depends: debhelper (>= 9),
+               dh-python,
+               dh-systemd,
+               python (>= 2.7),
+               python-setuptools
+Standards-Version: 3.9.6
+Homepage: https://github.com/paleg/Watcher
+Vcs-Browser: https://github.com/paleg/Watcher
+Vcs-Git: https://github.com/paleg/Watcher.git
+
+Package: fs-watcher
+Architecture: all
+Pre-Depends: debconf (>= 1.5.34)
+Depends: ${misc:Depends},
+         ${python:Depends},
+         python-pyinotify,
+         python-future,
+         python-lockfile,
+         python-chardet,
+         python-daemon
+Description: Watcher is a daemon that watches specified
+ files/folders for changes and fires commands in response
+ to those changes.

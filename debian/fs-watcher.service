@@ -1,0 +1,13 @@
+[Unit]
+Description=filesystem watcher
+After=basic.target
+
+[Service]
+ExecStart=/usr/sbin/watcher -c /etc/watcher.ini start
+ExecStop=/usr/sbin/watcher -c /etc/watcher.ini stop
+Type=simple
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

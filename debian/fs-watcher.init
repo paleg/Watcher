@@ -1,17 +1,17 @@
 #!/bin/bash
 ### BEGIN INIT INFO
-# Provides:          watcher
+# Provides:          fs-watcher
 # Required-Start:    $remote_fs $syslog
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Start/stop Watcher that watches specified files/folders for changes
+# Short-Description: Start/stop fs-watcher that watches specified files/folders for changes
 ### END INIT INFO
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
-DESC="Watches specified files/folders for changes"
-NAME="watcher"
-DAEMON="/usr/bin/watcher.py"
+DESC="watches specified files/folders for changes"
+NAME="fs-watcher"
+DAEMON="/usr/sbin/watcher"
 DAEMON_CONFIG="/etc/watcher.ini"
 
 
