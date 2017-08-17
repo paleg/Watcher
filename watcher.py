@@ -1,8 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, unicode_literals, absolute_import
 
-##/usr/bin/env python
 ##
 ##  Author: Bertrand Lacoste
 ##  Modified from daemon.runner and from watcher (https://github.com/splitbrain/Watcher, original work https://github.com/gregghz/Watcher)
