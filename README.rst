@@ -60,9 +60,29 @@ To install dependencies on Gentoo:
 
     emerge -av dev-python/pyinotify dev-python/python-daemon dev-python/lockfile dev-python/chardet dev-python/future
 
+pip_ will install dependencies automatically.
+
 Installation
 ------------
 
+Debian
+~~~~~~
+
+Download latest deb package from `GitHub releases page <https://github.com/paleg/Watcher/releases>`_ and install it with ``dpkg``.
+
+.. code-block:: bash
+
+    sudo dpkg -i fs-watcher_X.Y.Z-0_all.deb
+
+In addition to ``Watcher`` itself, it will install:
+
+* sample configuration file to ``/etc/watcher.ini``
+* systemd service ``fs-watcher`` (in disabled state).
+
+To start using ``Watcher`` you must change ``/etc/watcher.ini`` to suit your needs and enable/start ``fs-watcher`` service.
+
+Pip
+~~~
 System-wide using pip_:
 
 .. code-block:: bash
@@ -87,10 +107,7 @@ Use following command to check exact locations:
 
     pip show -f fs-watcher
 
-Autostart Watcher on system startup
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-There are samples startup scripts in the repo. Use your init system manual to install them properly. Check/fix path to ``Watcher`` executable in samples before using, by default it is assumed to be ``/usr/sbin/watcher``.
+There are samples of startup scripts. Use your init system manual to install them properly. Check/fix path to ``Watcher`` executable in samples before using, by default it is assumed to be ``/usr/sbin/watcher``.
 
 For systemd:
 
