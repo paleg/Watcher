@@ -113,26 +113,26 @@ For systemd:
 
 .. code-block:: bash
 
-    cp share/init/watcher.service /etc/systemd/system/watcher.service
+    cp share/init/fs-watcher.service /etc/systemd/system/fs-watcher.service
     systemctl daemon-reload
-    systemctl enable watcher
-    systemctl start watcher
+    systemctl enable fs-watcher
+    systemctl start fs-watcher
 
 For SysV:
 
 .. code-block:: bash
 
-    cp share/init/watcher.sysvinit /etc/init.d/watcher
-    update-rc.d watcher defaults
-    /etc/init.d/watcher start
+    cp share/init/fs-watcher.sysvinit /etc/init.d/fs-watcher
+    update-rc.d fs-watcher defaults
+    /etc/init.d/fs-watcher start
 
 For OpenRC:
 
 .. code-block:: bash
 
-    cp share/init/watcher.openrc /etc/init.d/watcher
-    rc-update add watcher default
-    /etc/init.d/watcher start
+    cp share/init/fs-watcher.openrc /etc/init.d/fs-watcher
+    rc-update add fs-watcher default
+    /etc/init.d/fs-watcher start
 
 
 Configuration

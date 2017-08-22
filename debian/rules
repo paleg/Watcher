@@ -9,7 +9,8 @@ override_dh_auto_build:
 override_dh_auto_install:
 	dh_auto_install -- --install-scripts=/usr/sbin
 
+# don't enable or starts the service by default
+override_dh_installinit:
+	dh_installinit --no-start
 override_dh_systemd_enable:
-	# Do not enable the file by default on purpose.
-	# The user should enable it only after making sure the configuration is
-	# appropriate for his/her computer.
+override_dh_systemd_start:

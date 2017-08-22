@@ -61,7 +61,7 @@ setup(
     data_files=[
         ('share/fs-watcher/etc',  ['debian/watcher.ini']),
         ('share/fs-watcher/init', ['debian/fs-watcher.service',
-                                   'debian/fs-watcher.init',
+                                   'debian/fs-watcher.sysvinit',
                                    'debian/fs-watcher.openrc']),
     ],
     # generate platform specific start script
