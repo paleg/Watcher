@@ -168,6 +168,22 @@ You can start ``Watcher`` with `debug` positional argument to prevent it from fo
 
 	watcher debug
 
+Increasing the amount of inotify watchers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There is a limit of max number of inotify watchers. When this limit is not enough to monitor all jobs, the limit must be increased for ``Watcher`` to work properly. You can find following error in log when facing this limit:
+
+.. code::
+
+    add_watch: cannot watch /...... WD=-1, Errno=No space left on device (ENOSPC)
+
+If you are running Debian, RedHat, or another similar Linux distribution, run the following in a terminal to increase this limit:
+
+.. code-block:: bash
+
+    echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+
+
 .. _incron: http://incron.aiken.cz/
 .. _PEP3143: http://legacy.python.org/dev/peps/pep-3143/
 .. _pyinotify: http://github.com/seb-m/pyinotify
