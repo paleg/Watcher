@@ -15,6 +15,11 @@ filesystem watcher
 
 |
 
+.. contents:: :local:
+
+Overview
+--------
+
 ``Watcher`` is a daemon that watches specified files/folders for changes and
 fires commands in response to those changes. It is similar to
 incron_, however, configuration uses a simpler
