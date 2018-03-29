@@ -188,6 +188,20 @@ If you are running Debian, RedHat, or another similar Linux distribution, run th
 
     echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
 
+Increasing the amount of queued events
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There is a limit of max queued events. When this limit is not enough to monitor all jobs, the limit must be increased for ``Watcher`` to work properly. You can find following warning in log when facing this limit:
+
+.. code::
+
+    pyinotify - WARNING - Event queue overflowed.
+
+If you are running Debian, RedHat, or another similar Linux distribution, run the following in a terminal to increase this limit:
+
+.. code-block:: bash
+
+    echo fs.inotify.max_queued_events=65536 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
 
 .. _incron: http://incron.aiken.cz/
 .. _PEP3143: http://legacy.python.org/dev/peps/pep-3143/
