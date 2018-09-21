@@ -51,6 +51,7 @@ def watcher(config):
         wm = pyinotify.WatchManager()
         handler = EventHandler(processes,
                                job = section,
+                               mask = mask,
                                folder = folder,
                                command = command,
                                log_output = log_output,

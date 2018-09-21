@@ -82,6 +82,11 @@ class EventHandler(pyinotify.ProcessEvent):
 
     def process_IN_CREATE(self, event):
         #print "Creating: %s"%(event.pathname)
+        if not self.opts['mask'] & pyinotify.IN_CREATE:
+            # pyinotify adds IN_CREATE to watch mask if auto_add is True
+            # so we need to filter it manually here
+            logging.debug("Skipping IN_CREATE as it was not defined in events")
+            return
         logging.info("Creating: %s", event.pathname)
         self.runCommand(event)
 
