@@ -33,14 +33,19 @@ class EventHandler(pyinotify.ProcessEvent):
             logging.debug("File '%s' excluded because its name matched exclude regexp '%s'", event.pathname, self.opts['exclude_re'].pattern)
             return
 
-        t = string.Template(self.opts['command'])
-        command = t.substitute(job=shellquote(self.opts['job']),
-                               folder=shellquote(self.opts['folder']),
-                               watched=shellquote(event.path),
-                               filename=shellquote(event.pathname),
-                               tflags=shellquote(event.maskname),
-                               nflags=shellquote(event.mask),
-                               cookie=shellquote(event.cookie if hasattr(event, "cookie") else 0))
+        try:
+            t = string.Template(self.opts['command'])
+            command = t.substitute(job=shellquote(self.opts['job']),
+                                   folder=shellquote(self.opts['folder']),
+                                   watched=shellquote(event.path),
+                                   filename=shellquote(event.pathname),
+                                   tflags=shellquote(event.maskname),
+                                   nflags=shellquote(event.mask),
+                                   cookie=shellquote(event.cookie if hasattr(event, "cookie") else 0))
+        except Exception:
+            logging.exception("Failed to substitute template '%s':", self.opts['command'])
+            return
+
         try:
             logHandler = NamedTemporaryFile(prefix="watcher-", suffix=".log")
 
@@ -139,10 +144,15 @@ def post_action(cmd, job, output):
         logging.exception("Failed to convert output:")
         output = "unparsable output"
 
-    t = string.Template(cmd)
-    command = t.substitute(job=shellquote(job),
-                           host=shellquote(socket.gethostname()),
-                           output=shellquote(output))
+    try:
+        t = string.Template(cmd)
+        command = t.substitute(job=shellquote(job),
+                               host=shellquote(socket.gethostname()),
+                               output=shellquote(output))
+    except Exception:
+        logging.exception("Failed to substitute post cmd '%s':", cmd)
+        return
+
     try:
         output = subprocess.check_output(command, stderr=subprocess.STDOUT, shell = True)
         logging.debug("post action succeed: '%s'", output)
