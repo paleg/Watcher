@@ -86,7 +86,7 @@ def main():
                                         'action_on_success': None,
                                         'action_on_failure': None,
                                         'outfile': None
-                                       })
+                                       }, allow_no_value=True)
     if args.config:
         # load config file specified by commandline
         confok = config.read(args.config)
