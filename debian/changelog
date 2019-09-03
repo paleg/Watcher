@@ -1,3 +1,9 @@
+fs-watcher (1.0.8-0) unstable; urgency=low
+
+  * Package for the latest release
+
+ -- Oleh Palii <o.palij@gmail.com>  Tue, 03 Sep 2019 19:45:23 +0200
+
 fs-watcher (1.0.7-0) unstable; urgency=low
 
   * Package for the latest release
