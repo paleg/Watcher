@@ -115,6 +115,7 @@ def main():
     else:
         loghandler.setFormatter(logformatter)
     logger.addHandler(loghandler)
+    logging.getLogger("chardet.charsetprober").setLevel(logging.CRITICAL)
 
     # Initialize the daemon
     options = init_daemon(config.defaults())

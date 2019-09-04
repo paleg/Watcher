@@ -174,6 +174,11 @@ def process_report(process, opts, stdoutdata):
             with open(opts['outfile'], 'a+b') as fh:
                 fh.write(stdoutdata)
         else:
+            try:
+                enc = chardet.detect(stdoutdata)['encoding']
+                stdoutdata = stdoutdata.decode(enc)
+            except Exception as err:
+                pass
             logging.info("Output was: '%s'", stdoutdata)
 
 def get_stdout_log(logHandler):
