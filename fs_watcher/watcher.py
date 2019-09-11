@@ -68,7 +68,7 @@ def watcher(config):
         # Remove watch about excluded dir.
         if excluded:
             for excluded_dir in excluded:
-                for (k, v) in wdds[section].items():
+                for (k, v) in list(wdds[section].items()):
                     try:
                         if k.startswith(excluded_dir):
                             wm.rm_watch(v)
