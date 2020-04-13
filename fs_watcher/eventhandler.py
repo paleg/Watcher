@@ -139,7 +139,8 @@ def post_action(cmd, job, output):
     try:
         # convert output to unicode
         enc = chardet.detect(output)['encoding']
-        output = output.decode(enc)
+        if enc is not None:
+            output = output.decode(enc)
     except Exception as err:
         logging.exception("Failed to convert output:")
         output = "unparsable output"
